@@ -56,74 +56,118 @@ func (r *Reflector) AddGoComments(base, path string, opts ...CommentOption) erro
 	return r.extractGoComments(base, path, r.CommentMap, co)
 }
 
+// pkgFilesKey groups parsed files by directory and package name so that a
+// single directory containing multiple packages (e.g. `foo` and `foo_test`)
+// is handled correctly.
+type pkgFilesKey struct{ dir, name string }
+
+// typeComment holds a raw type-level doc comment that still needs
+// the synopsis trim applied (after doc.NewFromFiles has consumed the ASTs).
+type typeComment struct{ key, text string }
+
 func (r *Reflector) extractGoComments(base, path string, commentMap map[string]string, opts *commentOptions) error {
 	fset := token.NewFileSet()
-	dict := make(map[string][]*ast.Package)
-	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() {
-			d, err := parser.ParseDir(fset, path, nil, parser.ParseComments)
-			if err != nil {
-				return err
-			}
-			for _, v := range d {
-				// paths may have multiple packages, like for tests
-				k := gopath.Join(base, path)
-				dict[k] = append(dict[k], v)
-			}
-		}
-		return nil
-	})
+	grouped, err := parseGoFiles(fset, path)
 	if err != nil {
 		return err
 	}
 
-	for pkg, p := range dict {
-		for _, f := range p {
-			gtxt := ""
-			typ := ""
-			ast.Inspect(f, func(n ast.Node) bool {
-				switch x := n.(type) {
-				case *ast.TypeSpec:
-					typ = x.Name.String()
-					if !ast.IsExported(typ) {
-						typ = ""
-					} else {
-						txt := x.Doc.Text()
-						if txt == "" && gtxt != "" {
-							txt = gtxt
-							gtxt = ""
-						}
-						if !opts.fullObjectText {
-							txt = doc.Synopsis(txt)
-						}
-						commentMap[fmt.Sprintf("%s.%s", pkg, typ)] = strings.TrimSpace(txt)
-					}
-				case *ast.Field:
-					txt := x.Doc.Text()
-					if txt == "" {
-						txt = x.Comment.Text()
-					}
-					if typ != "" && txt != "" {
-						for _, n := range x.Names {
-							if ast.IsExported(n.String()) {
-								k := fmt.Sprintf("%s.%s.%s", pkg, typ, n)
-								commentMap[k] = strings.TrimSpace(txt)
-							}
-						}
-					}
-				case *ast.GenDecl:
-					// remember for the next type
-					gtxt = x.Doc.Text()
-				}
-				return true
-			})
+	for key, files := range grouped {
+		// Normalize to forward slashes so the resulting key matches
+		// reflect.Type.PkgPath() on Windows, where filepath.Dir returns backslashes.
+		pkg := gopath.Join(base, filepath.ToSlash(key.dir))
+
+		var typeComments []typeComment
+		for _, f := range files {
+			typeComments = inspectFile(f, pkg, commentMap, typeComments)
+		}
+
+		// doc.Package.Synopsis is the non-deprecated replacement for doc.Synopsis;
+		// it handles doc links in comment text correctly. doc.NewFromFiles mutates
+		// the passed ASTs (nil-ing Doc fields), so it MUST run after the inspection above.
+		synopsis := func(s string) string { return s }
+		if !opts.fullObjectText {
+			if docPkg, derr := doc.NewFromFiles(fset, files, pkg); derr == nil {
+				synopsis = docPkg.Synopsis
+			}
+		}
+		for _, tc := range typeComments {
+			commentMap[tc.key] = strings.TrimSpace(synopsis(tc.text))
 		}
 	}
 
 	return nil
+}
+
+func parseGoFiles(fset *token.FileSet, path string) (map[pkgFilesKey][]*ast.File, error) {
+	grouped := make(map[pkgFilesKey][]*ast.File)
+	err := filepath.Walk(path, func(p string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || !strings.HasSuffix(p, ".go") {
+			return nil
+		}
+		file, err := parser.ParseFile(fset, p, nil, parser.ParseComments)
+		if err != nil {
+			return err
+		}
+		k := pkgFilesKey{dir: filepath.Dir(p), name: file.Name.Name}
+		grouped[k] = append(grouped[k], file)
+		return nil
+	})
+	return grouped, err
+}
+
+// inspectFile walks f, writing field comments directly into commentMap and
+// appending type-level comments (which still need synopsis trimming) to typeComments.
+func inspectFile(f *ast.File, pkg string, commentMap map[string]string, typeComments []typeComment) []typeComment {
+	gtxt := ""
+	typ := ""
+	ast.Inspect(f, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.TypeSpec:
+			typ = x.Name.String()
+			if !ast.IsExported(typ) {
+				typ = ""
+				return true
+			}
+			txt := x.Doc.Text()
+			if txt == "" && gtxt != "" {
+				txt = gtxt
+				gtxt = ""
+			}
+			typeComments = append(typeComments, typeComment{
+				key:  fmt.Sprintf("%s.%s", pkg, typ),
+				text: txt,
+			})
+		case *ast.Field:
+			writeFieldComment(x, pkg, typ, commentMap)
+		case *ast.GenDecl:
+			// remember for the next type
+			gtxt = x.Doc.Text()
+		}
+		return true
+	})
+	return typeComments
+}
+
+func writeFieldComment(x *ast.Field, pkg, typ string, commentMap map[string]string) {
+	if typ == "" {
+		return
+	}
+	txt := x.Doc.Text()
+	if txt == "" {
+		txt = x.Comment.Text()
+	}
+	if txt == "" {
+		return
+	}
+	for _, n := range x.Names {
+		if ast.IsExported(n.String()) {
+			commentMap[fmt.Sprintf("%s.%s.%s", pkg, typ, n)] = strings.TrimSpace(txt)
+		}
+	}
 }
 
 func (r *Reflector) lookupComment(t reflect.Type, name string) string {

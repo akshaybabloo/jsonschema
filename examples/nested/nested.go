@@ -1,3 +1,5 @@
+// Package nested holds fixture types referenced from the parent examples
+// package to verify that comment extraction recurses into sub-packages.
 package nested
 
 // Pet defines the user's fury friend.
