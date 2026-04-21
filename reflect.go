@@ -1120,29 +1120,38 @@ func (r *Reflector) typeName(t reflect.Type) string {
 	return t.Name()
 }
 
-// Split on commas that are not preceded by `\`.
-// This way, we prevent splitting regexes
+// splitOnUnescapedCommas splits a jsonschema struct tag on commas while
+// protecting commas that appear inside regex values. A comma does not split
+// when it is either preceded by a `\` (explicit escape — `\,` becomes a
+// literal `,`) or nested inside balanced `{...}` braces (so regex quantifiers
+// like `{n,m}` in a `pattern=...` value are preserved without escaping).
 func splitOnUnescapedCommas(tagString string) []string {
-	ret := make([]string, 0)
-	separated := strings.Split(tagString, ",")
-	ret = append(ret, separated[0])
-	i := 0
-	for _, nextTag := range separated[1:] {
-		if len(ret[i]) == 0 {
-			ret = append(ret, nextTag)
+	var parts []string
+	var cur strings.Builder
+	depth := 0
+	for i := 0; i < len(tagString); i++ {
+		c := tagString[i]
+		switch {
+		case c == '\\' && i+1 < len(tagString) && tagString[i+1] == ',':
+			cur.WriteByte(',')
 			i++
-			continue
-		}
-
-		if ret[i][len(ret[i])-1] == '\\' {
-			ret[i] = ret[i][:len(ret[i])-1] + "," + nextTag
-		} else {
-			ret = append(ret, nextTag)
-			i++
+		case c == '{':
+			depth++
+			cur.WriteByte(c)
+		case c == '}':
+			if depth > 0 {
+				depth--
+			}
+			cur.WriteByte(c)
+		case c == ',' && depth == 0:
+			parts = append(parts, cur.String())
+			cur.Reset()
+		default:
+			cur.WriteByte(c)
 		}
 	}
-
-	return ret
+	parts = append(parts, cur.String())
+	return parts
 }
 
 func fullyQualifiedTypeName(t reflect.Type) string {

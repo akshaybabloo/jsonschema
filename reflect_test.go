@@ -294,6 +294,13 @@ type PatternTest struct {
 	WithPattern string `json:"with_pattern" jsonschema:"minLength=1,pattern=[0-9]{1\\,4},maxLength=50"`
 }
 
+// PatternQuantifierTest exercises issue #181: a `{n,m}` quantifier in the
+// pattern must survive tag splitting without requiring backslash escaping.
+type PatternQuantifierTest struct {
+	BusinessRegistrationNumber string `json:"businessRegistrationNumber" jsonschema:"title=Business Registration Number,minLength=5,maxLength=20,pattern=^[A-Z]{0,2}[0-9A-Z]+$"`
+	PhoneNumber                string `json:"phoneNumber" jsonschema:"pattern=^\\+[1-9][0-9]{1,14}$"`
+}
+
 type RecursiveExample struct {
 	Text  string              `json:"text"`
 	Child []*RecursiveExample `json:"children,omitempty"`
@@ -444,6 +451,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&CustomMapOuter{}, &Reflector{}, "fixtures/custom_map_type.json"},
 		{&CustomTypeFieldWithInterface{}, &Reflector{}, "fixtures/custom_type_with_interface.json"},
 		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
+		{&PatternQuantifierTest{}, &Reflector{}, "fixtures/pattern_quantifier.json"},
 		{&RecursiveExample{}, &Reflector{}, "fixtures/recursive.json"},
 		{&KeyNamed{}, &Reflector{
 			KeyNamer: func(s string) string {
@@ -526,6 +534,22 @@ func TestSplitOnUnescapedCommas(t *testing.T) {
 		{`string without commas`, []string{`string without commas`}},
 		{`ünicode,𐂄,Ж\,П,ᠳ`, []string{`ünicode`, `𐂄`, `Ж,П`, `ᠳ`}},
 		{`empty,,tag`, []string{`empty`, ``, `tag`}},
+
+		// Regex `{n,m}` quantifiers must not split even without backslash escape (issue #181).
+		{`pattern=[0-9]{1,4}`, []string{`pattern=[0-9]{1,4}`}},
+		{`minLength=5,pattern=^[A-Z]{0,2}[0-9A-Z]+$,maxLength=20`, []string{`minLength=5`, `pattern=^[A-Z]{0,2}[0-9A-Z]+$`, `maxLength=20`}},
+		{`pattern=^\+[1-9][0-9]{1,14}$`, []string{`pattern=^\+[1-9][0-9]{1,14}$`}},
+		{`pattern=a{1,2}b{3,4}c,next=v`, []string{`pattern=a{1,2}b{3,4}c`, `next=v`}},
+
+		// Edge cases for brace-aware splitting.
+		{`pattern={a{b,c}d},next=v`, []string{`pattern={a{b,c}d}`, `next=v`}}, // nested braces
+		{`pattern={a\,b},next=v`, []string{`pattern={a,b}`, `next=v`}},        // escape still works inside braces
+		{`pattern={unclosed,next=v`, []string{`pattern={unclosed,next=v`}},    // unbalanced `{` swallows rest — caller bug, but must not panic
+		{`pattern=unopened},next=v`, []string{`pattern=unopened}`, `next=v`}}, // stray `}` at depth 0 passes through
+		{`a={},b=v`, []string{`a={}`, `b=v`}},                                 // empty braces
+		{``, []string{``}},                                                    // empty input → one empty part
+		{`,`, []string{``, ``}},                                               // single separator → two empty parts
+		{`\,`, []string{`,`}},                                                 // escaped-only input
 	}
 
 	for _, test := range tests {
