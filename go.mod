@@ -3,7 +3,7 @@ module github.com/invopop/jsonschema
 go 1.18
 
 require (
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.11.1
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 )
 
