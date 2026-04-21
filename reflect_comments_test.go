@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/invopop/jsonschema/examples"
+	"github.com/akshaybabloo/jsonschema/examples"
 )
 
 func TestCommentsSchemaGeneration(t *testing.T) {
@@ -35,7 +35,7 @@ func TestCommentsSchemaGeneration(t *testing.T) {
 func prepareCommentReflector(t *testing.T, opts ...CommentOption) *Reflector {
 	t.Helper()
 	r := new(Reflector)
-	err := r.AddGoComments("github.com/invopop/jsonschema", "./examples", opts...)
+	err := r.AddGoComments("github.com/akshaybabloo/jsonschema", "./examples", opts...)
 	require.NoError(t, err, "did not expect error while adding comments")
 	return r
 }
@@ -55,7 +55,7 @@ func prepareCustomCommentReflector(t *testing.T) *Reflector {
 		return fmt.Sprintf("Field %s of Go type %s.%s.", f, t.PkgPath(), t.Name())
 	}
 	// Also add the Go comments.
-	err := r.AddGoComments("github.com/invopop/jsonschema", "./examples")
+	err := r.AddGoComments("github.com/akshaybabloo/jsonschema", "./examples")
 	require.NoError(t, err, "did not expect error while adding comments")
 	return r
 }

@@ -160,11 +160,11 @@ type Reflector struct {
 	//
 	// Type descriptions should be defined like:
 	//
-	//   map[string]string{"github.com/invopop/jsonschema.Reflector": "A Reflector reflects values into a Schema."}
+	//   map[string]string{"github.com/akshaybabloo/jsonschema.Reflector": "A Reflector reflects values into a Schema."}
 	//
 	// And Fields defined as:
 	//
-	//   map[string]string{"github.com/invopop/jsonschema.Reflector.DoNotReference": "Do not reference definitions."}
+	//   map[string]string{"github.com/akshaybabloo/jsonschema.Reflector.DoNotReference": "Do not reference definitions."}
 	//
 	// See also: AddGoComments, LookupComment
 	CommentMap map[string]string

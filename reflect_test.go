@@ -360,7 +360,7 @@ func TestReflectFromType(t *testing.T) {
 	typ := reflect.TypeOf(tu)
 
 	s := r.ReflectFromType(typ)
-	assert.EqualValues(t, "https://github.com/invopop/jsonschema/test-user", s.ID)
+	assert.EqualValues(t, "https://github.com/akshaybabloo/jsonschema/test-user", s.ID)
 
 	x := struct {
 		Test string

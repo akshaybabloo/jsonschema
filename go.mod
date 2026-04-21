@@ -1,4 +1,4 @@
-module github.com/invopop/jsonschema
+module github.com/akshaybabloo/jsonschema
 
 go 1.26
 

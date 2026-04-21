@@ -1,9 +1,9 @@
 # Go JSON Schema Reflection
 
-[![Lint](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml)
-[![Test Go](https://github.com/invopop/jsonschema/actions/workflows/test.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/test.yaml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/invopop/jsonschema)](https://goreportcard.com/report/github.com/invopop/jsonschema)
-[![GoDoc](https://godoc.org/github.com/invopop/jsonschema?status.svg)](https://godoc.org/github.com/invopop/jsonschema)
+[![Lint](https://github.com/akshaybabloo/jsonschema/actions/workflows/lint.yaml/badge.svg)](https://github.com/akshaybabloo/jsonschema/actions/workflows/lint.yaml)
+[![Test Go](https://github.com/akshaybabloo/jsonschema/actions/workflows/test.yaml/badge.svg)](https://github.com/akshaybabloo/jsonschema/actions/workflows/test.yaml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/akshaybabloo/jsonschema)](https://goreportcard.com/report/github.com/akshaybabloo/jsonschema)
+[![GoDoc](https://godoc.org/github.com/akshaybabloo/jsonschema?status.svg)](https://godoc.org/github.com/akshaybabloo/jsonschema)
 [![codecov](https://codecov.io/gh/invopop/jsonschema/graph/badge.svg?token=JMEB8W8GNZ)](https://codecov.io/gh/invopop/jsonschema)
 ![Latest Tag](https://img.shields.io/github/v/tag/invopop/jsonschema)
 
@@ -19,7 +19,7 @@ This repository is a fork of the original [jsonschema](https://github.com/alecth
 - The original was stuck on the draft-04 version of JSON Schema, we've now moved to the latest JSON Schema Draft 2020-12.
 - Schema IDs are added automatically from the current Go package's URL in order to be unique, and can be disabled with the `Anonymous` option.
 - Support for the `FullyQualifyTypeName` option has been removed. If you have conflicts, you should use multiple schema files with different IDs, set the `DoNotReference` option to true to hide definitions completely, or add your own naming strategy using the `Namer` property.
-- Support for `yaml` tags and related options has been dropped for the sake of simplification. There were a [few inconsistencies](https://github.com/invopop/jsonschema/pull/21) around this that have now been fixed.
+- Support for `yaml` tags and related options has been dropped for the sake of simplification. There were a [few inconsistencies](https://github.com/akshaybabloo/jsonschema/pull/21) around this that have now been fixed.
 
 ## Versions
 
@@ -53,7 +53,7 @@ jsonschema.Reflect(&TestUser{})
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema_test/test-user",
+  "$id": "https://github.com/akshaybabloo/jsonschema_test/test-user",
   "$ref": "#/$defs/TestUser",
   "$defs": {
     "TestUser": {
@@ -122,7 +122,7 @@ jsonschema.Reflect(&TestUser{})
 
 ## YAML
 
-Support for `yaml` tags has now been removed. If you feel very strongly about this, we've opened a discussion to hear your comments: https://github.com/invopop/jsonschema/discussions/28
+Support for `yaml` tags has now been removed. If you feel very strongly about this, we've opened a discussion to hear your comments: https://github.com/akshaybabloo/jsonschema/discussions/28
 
 The recommended approach if you need to deal with YAML data is to first convert to JSON. The [invopop/yaml](https://github.com/invopop/yaml) library will make this trivial.
 
@@ -212,7 +212,7 @@ To get the comments provided into your JSON schema, use a regular `Reflector` an
 
 ```go
 r := new(Reflector)
-if err := r.AddGoComments("github.com/invopop/jsonschema", "./"); err != nil {
+if err := r.AddGoComments("github.com/akshaybabloo/jsonschema", "./"); err != nil {
   // deal with error
 }
 s := r.Reflect(&User{})

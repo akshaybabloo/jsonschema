@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-`github.com/invopop/jsonschema` is a Go library that generates JSON Schema (draft 2020-12) documents from Go types using reflection. It is a fork of `alecthomas/jsonschema` with breaking differences: auto-generated schema `$id`s based on package path, draft 2020-12 instead of draft-04, no `FullyQualifyTypeName` option, and no `yaml` tag support.
+`github.com/akshaybabloo/jsonschema` is a Go library that generates JSON Schema (draft 2020-12) documents from Go types using reflection. It is a fork of `alecthomas/jsonschema` with breaking differences: auto-generated schema `$id`s based on package path, draft 2020-12 instead of draft-04, no `FullyQualifyTypeName` option, and no `yaml` tag support.
 
 Go 1.26+ is required (per `go.mod`).
 
