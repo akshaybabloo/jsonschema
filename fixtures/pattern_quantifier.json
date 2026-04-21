@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/pattern-quantifier-test",
+  "$ref": "#/$defs/PatternQuantifierTest",
+  "$defs": {
+    "PatternQuantifierTest": {
+      "properties": {
+        "businessRegistrationNumber": {
+          "type": "string",
+          "maxLength": 20,
+          "minLength": 5,
+          "pattern": "^[A-Z]{0,2}[0-9A-Z]+$",
+          "title": "Business Registration Number"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "pattern": "^\\+[1-9][0-9]{1,14}$"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "businessRegistrationNumber",
+        "phoneNumber"
+      ]
+    }
+  }
+}
