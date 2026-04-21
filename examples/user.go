@@ -1,3 +1,5 @@
+// Package examples contains sample types used by the jsonschema test suite to
+// exercise Go-comment extraction.
 package examples
 
 import (
